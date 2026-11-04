@@ -32,6 +32,10 @@ button {
 button:disabled {
   cursor: default;
 }
+/* Decorative SVGs must not become the touch-capture target of their button. */
+button svg {
+  pointer-events: none;
+}
 button:focus-visible,
 a:focus-visible {
   outline: 3px solid #ddac5f;

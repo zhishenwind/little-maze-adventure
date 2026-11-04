@@ -1,3 +1,4 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-export default defineConfig({ plugins: [react()] });
+import { offlineBuild } from "./scripts/offline-build.ts";
+export default defineConfig({ plugins: [react(), offlineBuild()] });

@@ -6,13 +6,15 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "tsc -b && vite build",
+    "build:pages": "tsc -b && vite build --base=/little-maze-adventure/ --outDir=dist-pages",
     "preview": "vite preview --host 0.0.0.0",
+    "preview:pages": "vite preview --host 0.0.0.0 --base=/little-maze-adventure/ --outDir=dist-pages",
     "test": "node --experimental-strip-types --test src/game/maze.test.ts",
-    "test:e2e": "npm run build && playwright test",
+    "test:e2e": "npm run build && npm run build:pages && playwright test",
     "spec": "node scripts/openspec.mjs",
     "spec:validate": "npm run spec -- validate --all --strict --no-interactive && npm run spec -- validate --archived --strict --no-interactive",
     "check": "npm run spec:validate && npm test && npm run build",
-    "check:full": "npm run check && playwright test",
+    "check:full": "npm run check && npm run build:pages && playwright test",
     "offline": "npm run build && vite preview --host 0.0.0.0 --port 4173 --strictPort"
   },
   "dependencies": {

@@ -89,6 +89,22 @@ ssh -N -L 4173:127.0.0.1:4173 <你的SSH主机别名>
 
 `npm run check:full` 同时验证原有游戏和真实生产离线包，包括断网新开页面、手机触屏通关、下载失败重试、缓存丢失、新版等待／失败恢复与接口缓存边界。测试使用禁止 HTTP 缓存的静态服务器，避免把普通浏览器缓存误当成离线包。
 
+### GitHub Pages
+
+正式地址：[迷路小森林](https://zhishenwind.github.io/little-maze-adventure/)。Pages 的发布来源使用 **GitHub Actions**，不要直接发布 `main` 的源码目录；浏览器不能直接执行 `/src/main.tsx`。
+
+`.github/workflows/pages.yml` 在 `main` 推送或手动运行时安装锁定依赖，执行完整检查，再发布 `dist-pages/`。任一检查失败都不会部署本次产物。GitHub Pages 的子目录构建与本地根路径构建分开：
+
+```sh
+npm run build:pages
+npm run preview:pages -- --port 4174
+# 打开 http://localhost:4174/little-maze-adventure/
+```
+
+该构建的脚本、样式、照片、图标和 Worker 使用 `/little-maze-adventure/` 前缀；应用清单的启动地址和作用域也限定在该目录。首次出现“离线可用”后可在相同地址断网重开。默认 `npm run build`、`npm run preview` 继续使用根路径。
+
+`npm run test:e2e` 和 `npm run check:full` 会构建并验证两种部署路径。构建目录 `dist/` 与 `dist-pages/` 均不提交到源码仓库。
+
 ## 后续微信小程序迁移
 
 当前版本是 React Web，尚未包含微信小程序工程。`src/game/maze.ts` 是纯 TypeScript，可直接复用规则与寻路。后续可选用 Taro 的 React 方案，再替换 Web SVG、Pointer Events、Web Audio、全屏 API 及 localStorage；或将棋盘视图改为 Canvas，对接小程序触摸与存储 API。保持算法与渲染分离，方便后续迁移。

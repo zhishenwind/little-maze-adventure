@@ -2,6 +2,13 @@
 
 ## 未发布
 
+### 2026-11-04 · 修复 GitHub Pages 白屏
+
+- 修复直接发布 React 源码造成的空白页，增加构建、完整检查后再部署的 GitHub Actions 工作流。
+- 增加 `/little-maze-adventure/` 子目录专用构建，修正脚本、样式、图标、应用清单和离线入口的路径。
+- 保留本地根路径预览，新增子目录加载、缓存范围和手机离线通关回归。
+- [完整迭代记录](openspec/changes/fix-github-pages-deployment/verification.md)
+
 ### 2026-11-04 · GitHub 仓库配置
 
 - 配置 `origin` 为 `zhishenwind/little-maze-adventure`，将本地 `main` 快进到完整已交付版本，保留各功能分支及迭代历史。

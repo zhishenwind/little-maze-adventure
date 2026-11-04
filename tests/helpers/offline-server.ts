@@ -3,8 +3,11 @@ import { readFile } from "node:fs/promises";
 import { resolve, extname } from "node:path";
 
 /** Real HTTP server: Playwright routing cannot simulate fetch failures made by a Service Worker. */
-export async function offlineServer() {
-  const root = resolve("dist");
+export async function offlineServer(options: { directory?: string; base?: string } = {}) {
+  const root = resolve(options.directory ?? "dist");
+  const base = options.base ?? "/";
+  if (!base.startsWith("/") || !base.endsWith("/"))
+    throw new Error("Fixture base must start and end with a slash");
   const originalWorker = await readFile(resolve(root, "sw.js"), "utf8");
   const start = originalWorker.indexOf('[{"url":');
   const end = originalWorker.indexOf("}]", start) + 2;
@@ -21,28 +24,35 @@ export async function offlineServer() {
     ".css": "text/css",
     ".html": "text/html",
     ".svg": "image/svg+xml",
+    ".png": "image/png",
     ".webmanifest": "application/manifest+json",
   };
   const server = createServer(async (request, response) => {
     const url = new URL(request.url!, "http://localhost");
     state.requests.push(`${request.method} ${url.pathname}`);
     response.setHeader("Cache-Control", "no-store"); // Only the Worker, not HTTP cache, may make tests pass.
-    if (url.pathname.startsWith("/api/") || url.pathname === "/sdk.json") {
+    if (!url.pathname.startsWith(base)) {
+      response.writeHead(404);
+      response.end("Outside application path");
+      return;
+    }
+    const pathname = "/" + url.pathname.slice(base.length);
+    if (pathname.startsWith("/api/") || pathname === "/sdk.json") {
       response.setHeader("Content-Type", "application/json");
       response.end(
         JSON.stringify({ source: "network", method: request.method }),
       );
       return;
     }
-    if (state.failResource && url.pathname === "/favicon.svg") {
+    if (state.failResource && pathname === "/favicon.svg") {
       response.writeHead(503);
       response.end("Offline package download interrupted");
       return;
     }
     const name =
-      url.pathname === "/"
+      pathname === "/"
         ? "index.html"
-        : decodeURIComponent(url.pathname).slice(1);
+        : decodeURIComponent(pathname).slice(1);
     const file = resolve(root, name);
     if (!file.startsWith(root + "/")) {
       response.writeHead(403);
@@ -80,7 +90,7 @@ export async function offlineServer() {
   if (!address || typeof address === "string")
     throw new Error("Missing fixture server address");
   return {
-    url: `http://127.0.0.1:${address.port}`,
+    url: `http://127.0.0.1:${address.port}${base === "/" ? "" : base}`,
     state,
     manifest,
     close: () =>

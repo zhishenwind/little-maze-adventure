@@ -55,3 +55,17 @@ tests/game.spec.ts    # 浏览器交互与桌面/手机布局验证
 当前版本是 React Web，尚未包含微信小程序工程。`src/game/maze.ts` 是纯 TypeScript，可直接复用规则与寻路。后续可选用 Taro 的 React 方案，再替换 Web SVG、Pointer Events、Web Audio、全屏 API 及 localStorage；或将棋盘视图改为 Canvas，对接小程序触摸与存储 API。保持算法与渲染分离，方便后续迁移。
 
 玩法参考：[Google Play 的 Maze for Kids](https://play.google.com/store/apps/details?id=hu.crabs.kidmaze)。本项目的界面、角色与场景为独立实现。
+
+## 版本管理与需求迭代
+
+项目使用 Git 保存代码历史，使用 OpenSpec 保存需求、验收场景、设计和完成记录。后续功能与修复遵循 [开发与迭代流程](docs/DEVELOPMENT.md)，交付摘要见 [CHANGELOG.md](CHANGELOG.md)，AI 协作约定见 [AGENTS.md](AGENTS.md)。
+
+```sh
+npm run spec -- list --specs  # 查看当前能力规格
+npm run spec -- list          # 查看活动迭代
+npm run check                 # 规格、归档任务、算法测试与生产构建
+npm run check:full            # 再加桌面与手机浏览器交互验证
+git log --oneline             # 查看迭代提交
+```
+
+OpenSpec 安装为固定版本的开发依赖；在其他机器上执行 `npm ci` 即可恢复同样的工具版本。当前仅建立本地 Git 历史，尚未配置远程仓库。

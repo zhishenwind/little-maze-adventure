@@ -65,11 +65,21 @@ test("first visit saves every asset; later visits use cache and a fresh offline 
     ["小兔米米", "胡萝卜"],
     ["小猫布丁", "毛线球"],
     ["小熊多多", "蜂蜜"],
-    ["青蛙呱呱", "蝴蝶"],
+    ["小牛伊一", "蝴蝶"],
   ]) {
     await reopened.getByRole("button", { name, exact: true }).click();
     await expect(reopened.locator(".mission")).toContainText(treat);
   }
+  // Decode the photo while the browser is offline, so a missing pre-cache cannot go unnoticed.
+  const photo = await reopened.locator(".player image").getAttribute("href");
+  expect(photo).toContain("yiyi-avatar");
+  await reopened.evaluate(async (url) => {
+    const image = new Image();
+    image.src = url!;
+    await image.decode();
+    if (image.naturalWidth !== 512 || image.naturalHeight !== 512)
+      throw new Error("Avatar did not decode");
+  }, photo);
   for (const [name, size] of [
     ["勇敢出发", "6"],
     ["迷宫高手", "8"],
@@ -294,6 +304,7 @@ test("mobile touch resumes and completes a cached maze offline without horizonta
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth),
     ).toBe(375);
+    await page.getByRole("button", { name: "小牛伊一", exact: true }).tap();
     await page.getByRole("button", { name: "开始冒险", exact: true }).tap();
     await page.waitForTimeout(500);
     const { size, route } = await readBoard(page);
@@ -315,7 +326,7 @@ test("mobile touch resumes and completes a cached maze offline without horizonta
       });
       previous = next;
     }
-    await expect(page.getByRole("dialog")).toContainText("找到胡萝卜啦");
+    await expect(page.getByRole("dialog")).toContainText("找到蝴蝶啦");
     await page.getByRole("button", { name: "再来一次冒险" }).tap();
     await page.screenshot({
       path: "test-results/offline-phone.png",

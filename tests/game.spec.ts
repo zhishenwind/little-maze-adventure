@@ -17,7 +17,7 @@ test("settings, hints, restart, themes and animal rewards work", async ({
   await page.getByRole("button", { name: "梦幻星空" }).click();
   await page.getByRole("button", { name: "小熊多多", exact: true }).click();
   await expect(page.locator(".mission")).toContainText("蜂蜜");
-  await page.getByRole("button", { name: "青蛙呱呱", exact: true }).click();
+  await page.getByRole("button", { name: "小牛伊一", exact: true }).click();
   await expect(page.locator(".mission")).toContainText("蝴蝶");
   await page.getByRole("button", { name: /迷宫高手/ }).click();
   await expect(page.getByTestId("maze")).toHaveAttribute("data-size", "8");
@@ -170,4 +170,53 @@ test("desktop scene has no overflow", async ({ page }) => {
     1440,
   );
   await page.screenshot({ path: "test-results/desktop.png", fullPage: true });
+});
+
+test("Yiyi uses the same photo in settings, mission, maze and victory", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const option = page.getByRole("button", { name: "小牛伊一", exact: true });
+  await option.click();
+  const avatar = await option.locator("image").getAttribute("href");
+  expect(avatar).toContain("yiyi-avatar");
+  await expect(page.locator(".mission image")).toHaveAttribute("href", avatar!);
+  await expect(page.locator(".player image")).toHaveAttribute("href", avatar!);
+  await expect(page.locator(".mission")).toContainText("小牛伊一");
+  await page.evaluate(async (url) => {
+    const image = new Image();
+    image.src = url!;
+    await image.decode();
+  }, avatar);
+  const { size, route } = await readBoard(page);
+  const start = await center(page, 0, size);
+  const next = await center(page, route[0].cell, size);
+  await page.mouse.move(start.x, start.y);
+  await page.mouse.down();
+  await page.mouse.move(next.x, next.y);
+  await page.mouse.up();
+  await page.getByRole("button", { name: "蓝色海洋", exact: true }).click();
+  await expect(page.getByTestId("maze")).toHaveAttribute(
+    "data-position",
+    String(route[0].cell),
+  );
+  await page.screenshot({ path: "test-results/yiyi-game.png", fullPage: true });
+  for (const edge of route.slice(1))
+    await page.keyboard.press(keys[edge.direction]);
+  await expect(page.getByRole("dialog")).toContainText("小牛伊一");
+  await expect(page.getByRole("dialog")).toContainText("找到蝴蝶啦");
+  await expect(page.locator(".win-character image")).toHaveAttribute(
+    "href",
+    avatar!,
+  );
+  const clips = await page
+    .locator('svg[data-character="yiyi"] clipPath')
+    .evaluateAll((elements) => elements.map((e) => e.id));
+  expect(new Set(clips).size).toBe(clips.length);
+  await page.locator(".win-dialog").evaluate(async (element) => {
+    await Promise.all(
+      element.getAnimations().map((animation) => animation.finished),
+    );
+  });
+  await page.screenshot({ path: "test-results/yiyi-win.png", fullPage: true });
 });

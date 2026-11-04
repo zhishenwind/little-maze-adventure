@@ -1,4 +1,7 @@
-export type Character = "bunny" | "cat" | "bear" | "frog";
+import { useId } from "react";
+import yiyiAvatar from "./assets/yiyi-avatar.png";
+
+export type Character = "bunny" | "cat" | "bear" | "yiyi";
 export type Theme = "forest" | "ocean" | "space";
 
 export function Animal({
@@ -8,11 +11,40 @@ export function Animal({
   kind?: Character;
   className?: string;
 }) {
+  const clipId = `yiyi-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
+  if (kind === "yiyi") {
+    return (
+      <svg
+        className={className}
+        viewBox="0 0 100 100"
+        fill="none"
+        aria-hidden="true"
+        data-character="yiyi"
+      >
+        <defs>
+          <clipPath id={clipId}>
+            <circle cx="50" cy="50" r="44" />
+          </clipPath>
+        </defs>
+        <circle cx="50" cy="50" r="48" fill="#fff9ed" />
+        <image
+          href={yiyiAvatar}
+          x="6"
+          y="6"
+          width="88"
+          height="88"
+          preserveAspectRatio="xMidYMid slice"
+          clipPath={`url(#${clipId})`}
+          pointerEvents="none"
+        />
+        <circle cx="50" cy="50" r="45" stroke="#c99b9c" strokeWidth="2.5" />
+      </svg>
+    );
+  }
   const color = {
     bunny: "#fff9ed",
     cat: "#f5bf78",
     bear: "#bc906d",
-    frog: "#9cbf70",
   }[kind];
   return (
     <svg
@@ -67,33 +99,14 @@ export function Animal({
           <circle cx="77" cy="34" r="9" fill="#dfb99a" />
         </>
       )}
-      {kind === "frog" && (
-        <>
-          <circle
-            cx="28"
-            cy="34"
-            r="19"
-            fill={color}
-            stroke="#536744"
-            strokeWidth="2.5"
-          />
-          <circle
-            cx="72"
-            cy="34"
-            r="19"
-            fill={color}
-            stroke="#536744"
-            strokeWidth="2.5"
-          />
-        </>
-      )}
+
       <ellipse
         cx="50"
         cy="62"
         rx="37"
         ry="30"
         fill={color}
-        stroke={kind === "frog" ? "#536744" : "#675842"}
+        stroke="#675842"
         strokeWidth="2.5"
       />
       {kind === "cat" && (
@@ -120,14 +133,10 @@ export function Animal({
       <ellipse cx="36" cy="58" rx="3" ry="4" fill="#463f34" />
       <ellipse cx="64" cy="58" rx="3" ry="4" fill="#463f34" />
       <path
-        d={
-          kind === "frog"
-            ? "M38 70q12 13 24 0"
-            : "m46 69 4 4 4-4M50 73v4m-7 0q4 4 7 0 3 4 7 0"
-        }
+        d="m46 69 4 4 4-4M50 73v4m-7 0q4 4 7 0 3 4 7 0"
         stroke="#675842"
         strokeWidth="2"
-        fill={kind === "frog" ? "none" : "#d99b91"}
+        fill="#d99b91"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -203,7 +212,7 @@ export function Treat({
           <path d="m45 67 6-5 6 5-6 6z" fill="#daa149" />
         </>
       )}
-      {kind === "frog" && (
+      {kind === "yiyi" && (
         <>
           <path
             d="M43 42q-24-32-32-9-4 17 32 14M57 42q24-32 32-9 4 17-32 14"

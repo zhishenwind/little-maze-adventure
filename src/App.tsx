@@ -59,7 +59,7 @@ const characters: {
   { id: "bunny", name: "小兔米米", treat: "胡萝卜", verb: "找到" },
   { id: "cat", name: "小猫布丁", treat: "毛线球", verb: "找到" },
   { id: "bear", name: "小熊多多", treat: "蜂蜜", verb: "找到" },
-  { id: "frog", name: "青蛙呱呱", treat: "蝴蝶", verb: "找到" },
+  { id: "yiyi", name: "小牛伊一", treat: "蝴蝶", verb: "找到" },
 ];
 type Game = {
   maze: Maze;

@@ -8,11 +8,12 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview --host 0.0.0.0",
     "test": "node --experimental-strip-types --test src/game/maze.test.ts",
-    "test:e2e": "playwright test",
+    "test:e2e": "npm run build && playwright test",
     "spec": "node scripts/openspec.mjs",
     "spec:validate": "npm run spec -- validate --all --strict --no-interactive && npm run spec -- validate --archived --strict --no-interactive",
     "check": "npm run spec:validate && npm test && npm run build",
-    "check:full": "npm run check && npm run test:e2e"
+    "check:full": "npm run check && playwright test",
+    "offline": "npm run build && vite preview --host 0.0.0.0 --port 4173 --strictPort"
   },
   "dependencies": {
     "lucide-react": "^1.67.0",
@@ -27,6 +28,9 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.2.1",
     "typescript": "^7.0.2",
-    "vite": "^8.3.5"
+    "vite": "^8.3.5",
+    "workbox-core": "7.4.1",
+    "workbox-precaching": "7.4.1",
+    "workbox-routing": "7.4.1"
   }
 }

@@ -100,3 +100,11 @@ OpenSpec 初始化为 Codex 生成了 propose、apply、update、sync、archive�
 - [OpenSpec 项目](https://github.com/Fission-AI/OpenSpec)
 - [项目初始化](https://openspec.dev/docs/setup)
 - [CLI 参考](https://openspec.dev/docs/cli)
+
+## 离线能力维护
+
+- `scripts/offline-build.ts` 将 Worker 与应用一同编译，自动为实际构建输出与 public 静态资源生成 SHA-256 预缓存清单。增加资源时需确认扩展名在允许列表内，所有游戏资源均应来自受版本管理的本地文件。
+- `src/sw.js` 负责 Workbox 预缓存、缓存健康查询和用户触发的版本激活；`src/offline.ts` 管理注册与状态，`src/OfflineNotice.tsx` 展示反馈。不要在开发服务器启用离线服务。
+- 执行 `npm run offline` 在 4173 体验生产构建；Remote-SSH 使用 localhost 端口转发，手机需使用受信任 HTTPS。浏览器会按地址隔离离线包。
+- `tests/offline.spec.ts` 使用真实 Worker 和禁止 HTTP 缓存的生产资源服务器，验证离线重开、完整玩法、故障恢复、版本等待与缓存边界。不要用页面路由拦截冒充 Worker 真实网络失败。
+- 不为未来接口、身份或第三方 SDK 默认启用离线缓存。新增网络请求时建立独立变更，明确敏感数据、断网行为、更新策略与缓存撤销规则。

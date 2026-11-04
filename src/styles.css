@@ -1753,3 +1753,107 @@ dialog[open] {
     color: #8b967e;
   }
 }
+
+/* Cache state stays outside the game controls, so downloads and updates never interrupt a turn. */
+.offline-panel {
+  margin: -8px 0 23px;
+}
+.offline-notice,
+.offline-update {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 15px;
+  border: 1px solid #e3e9d9;
+  border-radius: 11px;
+  background: #f3f6ec;
+  color: #7d9169;
+}
+.offline-notice > div,
+.offline-update > div {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 5px 12px;
+  flex: 1;
+}
+.offline-notice strong,
+.offline-update strong {
+  font-size: 11px;
+  font-weight: 500;
+}
+.offline-notice span,
+.offline-update span {
+  font-size: 10px;
+  color: #89987a;
+  line-height: 1.8;
+}
+.offline-notice button,
+.offline-update button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  padding: 7px 10px;
+  border: 1px solid #c8d6b6;
+  border-radius: 7px;
+  background: #fffdf5;
+  white-space: nowrap;
+}
+.offline-notice button:disabled,
+.offline-update button:disabled {
+  opacity: 0.5;
+}
+.offline-error,
+.offline-update {
+  background: #faf6e9;
+  border-color: #e9dfc4;
+  color: #a18b57;
+}
+.offline-update {
+  margin-top: 9px;
+}
+.offline-update span {
+  color: #9e936e;
+}
+.offline-update button {
+  border-color: #e1d0a6;
+}
+.offline-development,
+.offline-unsupported {
+  background: #f5f5ef;
+  color: #919985;
+  border-color: #e8eadf;
+}
+@media (max-width: 760px) {
+  .offline-panel {
+    margin-top: -6px;
+    margin-bottom: 23px;
+  }
+  .offline-notice,
+  .offline-update {
+    align-items: flex-start;
+    gap: 8px;
+    padding: 11px;
+  }
+  .offline-notice > svg,
+  .offline-update > svg {
+    margin-top: 2px;
+  }
+  .offline-notice > div,
+  .offline-update > div {
+    flex-direction: column;
+    gap: 3px;
+  }
+  .offline-notice span,
+  .offline-update span {
+    font-size: 9px;
+    line-height: 1.7;
+  }
+  .offline-update {
+    flex-wrap: wrap;
+  }
+  .offline-update button {
+    margin-left: 25px;
+  }
+}

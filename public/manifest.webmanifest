@@ -1,0 +1,20 @@
+{
+  "id": "/",
+  "name": "迷路小森林",
+  "short_name": "迷路小森林",
+  "description": "离线也能玩的儿童迷宫乐园",
+  "lang": "zh-CN",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#faf9f3",
+  "theme_color": "#faf9f2",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

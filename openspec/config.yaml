@@ -6,6 +6,8 @@ context: |
   技术栈：React、TypeScript、Vite；纯算法位于 src/game/maze.ts。
   保持规则与平台渲染、输入、音频和存储分离，便于未来迁移。
   产品原则：触屏优先、无倒计时或失败惩罚、不依赖后端。
+  已支持生产构建首次保存后离线游玩；离线需 HTTPS 或 localhost，开发预览不注册 Worker。
+  缓存仅限本地构建资源，新增接口或 SDK 时另开变更评审离线边界。
   文档与说明使用简体中文；OpenSpec 结构标题及 SHALL/MUST、WHEN/THEN 保留英文。
   使用 npm run spec -- <command> 调用项目锁定的 OpenSpec CLI。
   项目协作规则见 AGENTS.md，完整迭代步骤见 docs/DEVELOPMENT.md。

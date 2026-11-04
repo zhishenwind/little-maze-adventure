@@ -24,6 +24,7 @@ import {
   Waves,
   X,
 } from "lucide-react";
+import OfflineNotice from "./OfflineNotice";
 import { Animal, Scenery, Treat } from "./Artwork";
 import type { Character, Theme } from "./Artwork";
 import { generateMaze, neighbor, solve } from "./game/maze";
@@ -544,6 +545,7 @@ export default function App() {
       </header>
 
       <main className="main-shell">
+        <OfflineNotice />
         <section className="intro">
           <div>
             <div className="eyebrow">

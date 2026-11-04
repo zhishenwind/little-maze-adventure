@@ -30,6 +30,7 @@
 | `git diff --check` | 通过 |
 | `git check-ignore dist/index.html dist-pages/index.html` | 两个产物目录均被忽略，不提交构建产物 |
 | `git diff --exit-code bda6083 -- src/App.tsx src/styles.css tests/game.spec.ts src/game` | 返回 0，无差异；本轮交互实验已撤回 |
+| 归档后 `npm run spec:validate`、`npm run spec -- list` | 7 项主规格与 5 项归档全部通过，无活动变更；主规格已逐段核对后再归档 |
 
 ## 过程与范围收敛
 
@@ -41,7 +42,15 @@
 
 用户已通过官方浏览器流程补充 workflow 权限，Pages 已切换为 workflow 来源，地址、HTTPS 与既有公开访问方式保持不变。
 
-待完成：推送收敛后的部署流程，确认云端检查和发布成功，随后验证真实 HTTPS 首页已加载构建脚本、显示游戏，照片与离线重开正常。此处在实际完成后补充结果。
+- 修复提交 `75d3da6` 已推送至 main 与修复分支。
+- [GitHub Actions 41806036073](https://github.com/zhishenwind/little-maze-adventure/actions/runs/41806036073) 的 build、部署检查、产物上传及 deploy 全部成功；部署于北京时间 2026-11-04 17:17 完成。
+- 真实 Chrome 访问用户原始地址，首页返回 200，root 挂载 1 个应用节点，页面标题、设置和迷宫正常显示，无浏览器异常或资源 404。
+- `/little-maze-adventure/assets/index-DyfgQ3pv.js` 返回 200，MIME 为 `application/javascript`；CSS 返回 200，MIME 为 `text/css`，不再请求开发入口 `/src/main.tsx`。
+- 照片成功解码为 512×512，清单入口和作用域解析到仓库目录；Worker scope 同为该目录，6 项预缓存均位于应用范围内。
+- 断网关闭页面后以新标签页重开原地址，返回 200，响应来自 Service Worker，React 正常挂载并显示离线状态。
+- 390×844 手机视口正常渲染，文档宽度为 390，无横向溢出。人工查看真实站点截图确认页面已恢复，截图未提交。
+
+主规格与归档记录在实际线上验收后同步，文档归档提交使用 `[skip ci]`，避免仅更新验收记录再次构建；线上代码对应已成功部署的 `75d3da6`，没有未发布的运行代码改动。
 
 ## 边界
 

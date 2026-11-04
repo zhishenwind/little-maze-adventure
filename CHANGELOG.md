@@ -8,7 +8,8 @@
 - 增加 `/little-maze-adventure/` 子目录专用构建，修正脚本、样式、图标、应用清单和离线入口的路径。
 - 保留本地根路径预览，新增子目录加载、缓存范围和手机离线通关回归。
 - CI 聚焦类型、生产构建、资源路径和离线验证；保留失败追踪，本轮不改变游戏逻辑。
-- [完整迭代记录](openspec/changes/fix-github-pages-deployment/verification.md)
+- 云端构建与部署成功，原地址已验证正常渲染、资源加载及断网重开。
+- [完整迭代档案](openspec/changes/archive/2026-11-04-fix-github-pages-deployment/verification.md)
 
 ### 2026-11-04 · GitHub 仓库配置
 

@@ -14,12 +14,13 @@
 
 - 使用独立 `build:pages` 命令传递 Vite base `/little-maze-adventure/` 并输出到 `dist-pages/`。默认 build 仍输出根路径 `dist/`，避免影响现有本地预览和测试。两个目录都不提交。
 - 应用清单的 id、start_url、scope 使用 `./`，图标使用相对 URL；HTML 的公共资源链接由 Vite 根据 base 重写。无需更改已经支持 BASE_URL 的 Worker 注册逻辑。
-- GitHub Actions 在 main 推送或手动触发时执行锁定安装、Chrome 安装、完整根路径及子目录检查，再上传 `dist-pages/`，由单独部署任务发布。部署权限限制到 pages 与 OIDC，使用 github-pages 环境；失败检查阻止部署。
+- GitHub Actions 在 main 推送或手动触发时执行锁定安装、Playwright 配套 Chromium 安装、完整根路径及子目录检查，再上传 `dist-pages/`，由单独部署任务发布。部署权限限制到 pages 与 OIDC，使用 github-pages 环境；失败检查阻止部署。本机默认仍使用已安装的 Chrome。
 - 将 Pages 构建来源从 legacy 切换为 workflow，保持 URL、HTTPS 与既有公开访问方式。以远程 Actions 结果及真实 Chrome 在线／断网复查作为发布验收。
 - 静态测试服务器增加可选构建目录和路径前缀，默认行为保留；子目录外请求返回 404，不提供开发服务器式首页回退，确保错误路径不会被测试掩盖。
 - 按钮与链接采用 `touch-action: manipulation`，明确点按用途，避免浏览器将连续点按判为双击缩放，仍允许滚动与双指缩放；方向按钮继续通过 click 统一处理触屏、鼠标及辅助输入。增加拖动后重试与逐次快速点按的状态断言。
 - 按钮内 SVG 作为装饰，使用 `pointer-events: none` 将事件命中交给按钮本身。云端原生事件显示失败点击的目标为 SVG，收到 pointerup 与 touchend 却未产生 click；开始按钮的文字目标能正常产生 click。棋盘 SVG 不在按钮内，不受该规则影响。
 - 浏览器失败时保留 trace 与截图，并上传为保留三天的 CI 诊断产物，便于核对跨平台事件差异；这些文件不进入源码或站点构建。
+- CI 采用 Playwright 锁定的浏览器版本，而非每次升级的系统 Chrome；测试结束低层 CDP 拖动后显式关闭该调试会话，再交还 Playwright 点按，避免两条模拟输入通道残留状态。所有拖动、方向按钮、重试和通关断言保持运行。
 
 ## Risks / Trade-offs
 

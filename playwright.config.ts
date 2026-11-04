@@ -5,7 +5,7 @@ export default defineConfig({
   workers: 4,
   use: {
     baseURL: "http://127.0.0.1:5173",
-    channel: "chrome",
+    channel: process.env.CI ? undefined : "chrome",
     headless: true,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",

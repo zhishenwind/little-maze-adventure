@@ -152,6 +152,7 @@ test("phone layout fits, touch drag resumes and direction buttons finish the maz
     "data-position",
     String(route[1].cell),
   );
+  await cdp.detach();
   for (const edge of route.slice(2))
     await page
       .getByRole("button", { name: labels[edge.direction], exact: true })
@@ -292,6 +293,7 @@ test("rotation and returning to settings preserve a rectangular adventure", asyn
     await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ ...to, id: 1 }] });
     await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
     await expect(page.getByTestId("maze")).toHaveAttribute("data-position", String(route[1].cell));
+    await cdp.detach();
     for (const edge of route.slice(2)) await page.getByRole("button", { name: labels[edge.direction], exact: true }).tap();
     await expect(page.getByRole("dialog")).toContainText("找到胡萝卜啦");
   } finally { await context.close(); }
@@ -314,6 +316,7 @@ test("direct mobile drag enters focused play after release without losing the ge
     await expect(page.locator(".app")).toHaveClass(/game-focused/);
     await expect(page.getByTestId("maze")).toHaveAttribute("data-position", String(route[0].cell));
     await expect(page.locator(".hedge")).toHaveAttribute("d", path!);
+    await cdp.detach();
     await page.getByRole("button", { name: "重新开始当前迷宫" }).tap();
     await expect(page.getByTestId("maze")).toHaveAttribute("data-position", "0");
     await expect(page.locator(".hedge")).toHaveAttribute("d", path!);
@@ -351,6 +354,7 @@ test("rapid direction taps and restart remain responsive after a touch drag", as
     await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ ...to, id: 1 }] });
     await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
     await expect(page.getByTestId("maze")).toHaveAttribute("data-position", String(route[0].cell));
+    await cdp.detach();
     await page.getByRole("button", { name: "重新开始当前迷宫" }).tap();
     try {
       await expect(page.getByTestId("maze")).toHaveAttribute("data-position", "0");

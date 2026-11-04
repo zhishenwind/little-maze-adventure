@@ -26,6 +26,8 @@
 | `npm run build:pages` | 类型检查与生产构建通过；HTML 使用 `/little-maze-adventure/assets/`、正确清单及图标地址，无开发入口 |
 | `npx playwright test tests/pages.spec.ts` | 3 项通过：子目录资源、照片和清单；Worker 作用域及断网新标签页通关；手机边界阻挡、松手续拖及离线通关 |
 | `npm run check:full` | 初版 23 项浏览器测试通过；补充触控配置与快速点按回归后，严格规格校验、11 项算法测试、两个生产构建与全部 24 项浏览器测试通过 |
+| CI 配置本机复查 | 使用临时目录安装的 Playwright 配套 Chromium，运行 `CI=true PLAYWRIGHT_BROWSERS_PATH=/private/tmp/maze-playwright-browsers npm run check:full`，11 项算法、双构建及 24 项浏览器测试全部通过 |
+| 当前 Chrome 对照 | 使用隔离的官方 Chrome for Testing 157.0.8103.38，全部 24 项浏览器测试通过，未升级用户本机 Chrome |
 | 工作流 YAML | 使用项目已安装的 yaml 解析，并核对 main 触发、deploy 依赖 build、上传目录为 dist-pages，检查通过 |
 | `git diff --check` | 通过，无空白错误 |
 | `git check-ignore dist/index.html dist-pages/index.html` | 两个产物目录均被忽略，不提交构建产物或测试截图 |
@@ -38,6 +40,7 @@
 - 首次云端运行 [41799944473](https://github.com/zhishenwind/little-maze-adventure/actions/runs/41799944473)：安装、规格、算法及双构建通过，浏览器 20 项通过、3 项拖动后的按钮测试失败，部署被阻止。本机 Chrome 为 156.0.8078.80，云端安装 Chrome 157.0.8103.38；补充按钮触控属性与逐次点按回归，并保存后续 CI 失败诊断。
 - 待完成：重新执行云端检查与部署，并复查真实 HTTPS 地址。此处在实际发布后补充结果。
 - 后续运行 41801163715 与原生事件诊断运行 41802268602 仍被同一类按钮回归阻止。诊断确认：按钮内 SVG 收到 pointerdown、pointerup 和 touchend，但没有 click；开始按钮的文字目标可正常触发 click。隔离的 macOS Chrome 157.0.8103.38 完整 24 项仍通过。将装饰 SVG 从按钮命中测试中排除，使按钮承接触控；保留相同回归以在云端验证。
+- 运行 41802766088 证明命中按钮本体后 Linux 系统 Chrome 仍没有生成 click，因此不能将问题单独归因于 SVG；切换 CI 为 Playwright 配套的锁定 Chromium，同时在完成低层 CDP 拖动后显式关闭该会话，再使用 Playwright 点按，避免跨模拟输入通道残留。保留全部 24 项功能用例，不跳过失败检查。
 
 ## 范围与限制
 

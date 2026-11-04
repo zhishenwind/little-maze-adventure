@@ -4,10 +4,10 @@
 
 ### 2026-11-04 · 修复 GitHub Pages 白屏
 
-- 修复直接发布 React 源码造成的空白页，增加构建、完整检查后再部署的 GitHub Actions 工作流。
+- 修复直接发布 React 源码造成的空白页，增加构建、部署资源检查后再发布的 GitHub Actions 工作流。
 - 增加 `/little-maze-adventure/` 子目录专用构建，修正脚本、样式、图标、应用清单和离线入口的路径。
 - 保留本地根路径预览，新增子目录加载、缓存范围和手机离线通关回归。
-- 补足按钮触控属性与拖动后的快速点按回归，CI 失败时保留浏览器追踪供跨平台诊断。
+- CI 聚焦类型、生产构建、资源路径和离线验证；保留失败追踪，本轮不改变游戏逻辑。
 - [完整迭代记录](openspec/changes/fix-github-pages-deployment/verification.md)
 
 ### 2026-11-04 · GitHub 仓库配置

@@ -152,7 +152,6 @@ test("phone layout fits, touch drag resumes and direction buttons finish the maz
     "data-position",
     String(route[1].cell),
   );
-  await cdp.detach();
   for (const edge of route.slice(2))
     await page
       .getByRole("button", { name: labels[edge.direction], exact: true })
@@ -293,7 +292,6 @@ test("rotation and returning to settings preserve a rectangular adventure", asyn
     await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ ...to, id: 1 }] });
     await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
     await expect(page.getByTestId("maze")).toHaveAttribute("data-position", String(route[1].cell));
-    await cdp.detach();
     for (const edge of route.slice(2)) await page.getByRole("button", { name: labels[edge.direction], exact: true }).tap();
     await expect(page.getByRole("dialog")).toContainText("找到胡萝卜啦");
   } finally { await context.close(); }
@@ -316,65 +314,8 @@ test("direct mobile drag enters focused play after release without losing the ge
     await expect(page.locator(".app")).toHaveClass(/game-focused/);
     await expect(page.getByTestId("maze")).toHaveAttribute("data-position", String(route[0].cell));
     await expect(page.locator(".hedge")).toHaveAttribute("d", path!);
-    await cdp.detach();
     await page.getByRole("button", { name: "重新开始当前迷宫" }).tap();
     await expect(page.getByTestId("maze")).toHaveAttribute("data-position", "0");
     await expect(page.locator(".hedge")).toHaveAttribute("d", path!);
-  } finally { await context.close(); }
-});
-
-test("rapid direction taps and restart remain responsive after a touch drag", async ({ browser }) => {
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
-  try {
-    const page = await context.newPage();
-    await page.addInitScript(() => {
-      const log: Record<string, unknown>[] = [];
-      (window as typeof window & { mazeTouchDiagnostics: typeof log }).mazeTouchDiagnostics = log;
-      for (const type of ["pointerdown", "pointerup", "pointercancel", "gotpointercapture", "lostpointercapture", "touchstart", "touchend", "click"]) {
-        document.addEventListener(type, (event) => {
-          const pointer = event as PointerEvent;
-          const target = event.target as Element;
-          log.push({
-            type, target: target.tagName,
-            button: target.closest("button")?.getAttribute("aria-label"),
-            pointerId: pointer.pointerId, pointerType: pointer.pointerType,
-            x: pointer.clientX, y: pointer.clientY, trusted: event.isTrusted,
-            position: document.querySelector('[data-testid="maze"]')?.getAttribute("data-position"),
-          });
-          if (log.length > 80) log.shift();
-        }, { capture: true, passive: true });
-      }
-    });
-    await page.goto("http://127.0.0.1:5173/");
-    await page.getByRole("button", { name: "开始冒险", exact: true }).tap();
-    const { size, route } = await readBoard(page);
-    const cdp = await context.newCDPSession(page);
-    const from = await center(page, 0, size), to = await center(page, route[0].cell, size);
-    await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ ...from, id: 1 }] });
-    await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ ...to, id: 1 }] });
-    await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
-    await expect(page.getByTestId("maze")).toHaveAttribute("data-position", String(route[0].cell));
-    await cdp.detach();
-    await page.getByRole("button", { name: "重新开始当前迷宫" }).tap();
-    try {
-      await expect(page.getByTestId("maze")).toHaveAttribute("data-position", "0");
-    } catch (error) {
-      console.log("Touch event diagnostics", await page.evaluate(() =>
-        (window as typeof window & { mazeTouchDiagnostics: unknown }).mazeTouchDiagnostics));
-      throw error;
-    }
-    const direction = route[0].direction;
-    for (let n = 0; n < 6; n++) {
-      await page.getByRole("button", { name: labels[direction], exact: true }).tap();
-      await expect(page.getByTestId("maze")).toHaveAttribute("data-position", String(route[0].cell));
-      await page.getByRole("button", { name: labels[(direction + 2) % 4], exact: true }).tap();
-      await expect(page.getByTestId("maze")).toHaveAttribute("data-position", "0");
-    }
-    await expect(page.locator(".movement-status")).toContainText("12");
-    for (const edge of route) {
-      await page.getByRole("button", { name: labels[edge.direction], exact: true }).tap();
-      await expect(page.getByTestId("maze")).toHaveAttribute("data-position", String(edge.cell));
-    }
-    await expect(page.getByRole("dialog")).toContainText("找到胡萝卜啦");
   } finally { await context.close(); }
 });

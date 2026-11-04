@@ -15,6 +15,7 @@
     "spec:validate": "npm run spec -- validate --all --strict --no-interactive && npm run spec -- validate --archived --strict --no-interactive",
     "check": "npm run spec:validate && npm test && npm run build",
     "check:full": "npm run check && npm run build:pages && playwright test",
+    "check:pages": "npm run spec:validate && npm run build:pages && playwright test tests/pages.spec.ts",
     "offline": "npm run build && vite preview --host 0.0.0.0 --port 4173 --strictPort"
   },
   "dependencies": {

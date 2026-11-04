@@ -113,7 +113,7 @@ OpenSpec 初始化为 Codex 生成了 propose、apply、update、sync、archive�
 
 - GitHub 仓库 Settings → Pages → Build and deployment 的 Source 使用 GitHub Actions。工作流位于 `.github/workflows/pages.yml`，仅 main 推送与手动运行触发。
 - `npm run build:pages` 使用仓库前缀 `/little-maze-adventure/`，输出 `dist-pages/`；根路径构建仍输出 `dist/`。若仓库名或站点路径变更，同时调整构建命令、浏览器测试和此处说明。
-- CI 使用 Node.js 24、`npm ci` 和 Playwright 配套的锁定版本 Chromium，运行 `npm run check:full` 后才上传 Pages 产物；本机默认使用已安装的 Chrome。deploy 任务依赖 build，通过 github-pages 环境部署，不以源码目录或开发服务器代替生产产物。
+- CI 使用 Node.js 24、`npm ci` 和 Playwright 配套的锁定版本 Chromium，运行 `npm run check:pages` 验证类型、规格、生产构建和部署资源后才上传 Pages 产物；本机默认使用已安装的 Chrome。算法与通用交互使用独立的 `npm run check:full`，本次部署修复不以这些无关检查阻塞发布。deploy 任务依赖 build，通过 github-pages 环境部署，不以源码目录或开发服务器代替生产产物。
 - `tests/pages.spec.ts` 使用不提供首页回退的真实子目录静态服务，验证资源无 404、应用清单路径、Worker 范围、离线新标签页与手机触屏通关。发布后还需检查实际 HTTPS 站点，不能只凭 Actions 成功判断页面可用。
 - 浏览器失败会保留 trace 与截图，CI 上传 `browser-test-failures` 供诊断，三天后自动过期；这些文件仍在 Git 忽略范围内，也不上传到 Pages 站点。
 - GitHub OAuth 推送 `.github/workflows/` 需要 workflow 权限；通过官方登录流程授权，不把 Token 放进文件、提交或远程 URL。该配置不改变“每轮推送须有用户授权”的约定。

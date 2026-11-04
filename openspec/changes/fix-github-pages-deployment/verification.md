@@ -4,47 +4,45 @@
 
 ## 问题与证据
 
-用户报告 `https://zhishenwind.github.io/little-maze-adventure/` 白屏。
+用户报告 `https://zhishenwind.github.io/little-maze-adventure/` 只有标题、页面白屏。
 
 - 线上 HTML 返回 200，但 root 为空，仍引用开发入口 `/src/main.tsx`。
 - 真实 Chrome 记录 `/src/main.tsx` 与 `/favicon.svg` 返回 404，React 未启动。
-- GitHub Pages API 显示 `build_type: legacy`、source 为 main 的 `/`，构建任务虽然成功，却只发布源码目录。
-- Vite 默认根路径构建无法满足仓库子目录，应用清单也硬编码了根路径入口与图标。
+- GitHub Pages API 显示 build_type 为 legacy、source 为 main 的 `/`：平台构建成功不代表 React 已被打包，实际发布的是源码目录。
+- Vite 默认根路径与仓库子目录不匹配，应用清单也使用根路径入口与图标。
 
-## 修复
+## 最终修复范围
 
-- 增加 `build:pages` 与 `preview:pages`，使用 `/little-maze-adventure/` 前缀与独立 `dist-pages/`，保留本地根路径构建。
-- 清单改为相对 id、start_url、scope 与图标；Vite 正确重写 HTML 的资源 URL，现有 Worker BASE_URL 注册及相对预缓存无需修改。
-- 新增 GitHub Pages Actions 工作流，通过锁定依赖安装、类型、规格、算法及浏览器检查后才上传和部署产物。
-- 部署任务只在 build 成功后执行，使用 github-pages 环境及限定的 Pages/OIDC 权限。
-- 测试静态服务支持指定构建目录与前缀，不为错误路径返回首页，防止开发服务器掩盖路径错误。
+- 使用 `build:pages` 与 `preview:pages`，指定 `/little-maze-adventure/` 前缀并输出独立 `dist-pages/`。
+- 应用清单改为相对入口、作用域和图标；Vite 重写 HTML 中的脚本、样式、清单及图标地址。
+- Pages 从 legacy 改为 workflow，GitHub Actions 先执行 `check:pages`，成功后上传并发布 `dist-pages/`，不发布源码目录。
+- `check:pages` 专门检查类型、规格、生产构建、子目录资源加载、照片、清单与离线范围；不运行算法和通用页面交互测试。
+- 不修改游戏源码、算法或原有游戏测试。保留通用完整检查入口，部署与游戏检查职责分开。
 
-## 本地检查
+## 已运行的本地验证
 
 | 命令／检查 | 实际结果 |
 | --- | --- |
-| `npm run build:pages` | 类型检查与生产构建通过；HTML 使用 `/little-maze-adventure/assets/`、正确清单及图标地址，无开发入口 |
-| `npx playwright test tests/pages.spec.ts` | 3 项通过：子目录资源、照片和清单；Worker 作用域及断网新标签页通关；手机边界阻挡、松手续拖及离线通关 |
-| `npm run check:full` | 初版 23 项浏览器测试通过；补充触控配置与快速点按回归后，严格规格校验、11 项算法测试、两个生产构建与全部 24 项浏览器测试通过 |
-| CI 配置本机复查 | 使用临时目录安装的 Playwright 配套 Chromium，运行 `CI=true PLAYWRIGHT_BROWSERS_PATH=/private/tmp/maze-playwright-browsers npm run check:full`，11 项算法、双构建及 24 项浏览器测试全部通过 |
-| 当前 Chrome 对照 | 使用隔离的官方 Chrome for Testing 157.0.8103.38，全部 24 项浏览器测试通过，未升级用户本机 Chrome |
-| 工作流 YAML | 使用项目已安装的 yaml 解析，并核对 main 触发、deploy 依赖 build、上传目录为 dist-pages，检查通过 |
-| `git diff --check` | 通过，无空白错误 |
-| `git check-ignore dist/index.html dist-pages/index.html` | 两个产物目录均被忽略，不提交构建产物或测试截图 |
+| `npm run build:pages` | 类型和生产构建通过；HTML 使用 `/little-maze-adventure/assets/`、正确清单和图标地址，无 `/src/main.tsx` |
+| `npx playwright test tests/pages.spec.ts` | 3 项部署验证通过：资源和清单正确；Worker 范围及断网重开正常；子目录生产包触屏可通关 |
+| `npm run check:pages` | 规格、类型、Pages 构建与 3 项部署浏览器检查全部通过 |
+| 工作流 YAML | 可解析；main 触发；deploy 依赖 build；上传目录为 dist-pages；失败时保留诊断产物 |
+| `git diff --check` | 通过 |
+| `git check-ignore dist/index.html dist-pages/index.html` | 两个产物目录均被忽略，不提交构建产物 |
+| `git diff --exit-code bda6083 -- src/App.tsx src/styles.css tests/game.spec.ts src/game` | 返回 0，无差异；本轮交互实验已撤回 |
 
-专项浏览器测试确认：JavaScript、CSS、图标及照片均从仓库目录加载，没有资源 404 或页面异常；应用清单所有入口正确解析到该目录。Worker 的 registration scope 和全部预缓存 URL 均在该目录，其他应用的导航仍返回 404，没有被游戏首页替代。
+## 过程与范围收敛
+
+前期将全部游戏回归放入发布流程，云端的三项模拟触摸后点按检查失败，导致部署任务一直被阻止。运行记录包括 41799944473、41801163715、41802268602、41802766088、41803664916；页面资源与离线专项检查始终通过。相关本机全量检查曾通过，但这些结果不能作为线上已修复的依据。
+
+用户明确要求聚焦 Actions 构建与部署，指出算法和页面逻辑不属于本次白屏排查范围。因此撤回本轮所有交互代码和游戏测试实验，发布门槛改为与白屏直接相关的部署检查；没有删除或放宽已有游戏断言。保留配套测试浏览器及失败诊断，避免系统 Chrome 的每次升级影响部署环境。
 
 ## 发布与线上验收
 
-- 用户已通过官方浏览器流程补充 workflow 授权，Pages 已从 legacy 切为 workflow 来源，保持原有地址及公开访问设置。
-- 首次云端运行 [41799944473](https://github.com/zhishenwind/little-maze-adventure/actions/runs/41799944473)：安装、规格、算法及双构建通过，浏览器 20 项通过、3 项拖动后的按钮测试失败，部署被阻止。本机 Chrome 为 156.0.8078.80，云端安装 Chrome 157.0.8103.38；补充按钮触控属性与逐次点按回归，并保存后续 CI 失败诊断。
-- 待完成：重新执行云端检查与部署，并复查真实 HTTPS 地址。此处在实际发布后补充结果。
-- 后续运行 41801163715 与原生事件诊断运行 41802268602 仍被同一类按钮回归阻止。诊断确认：按钮内 SVG 收到 pointerdown、pointerup 和 touchend，但没有 click；开始按钮的文字目标可正常触发 click。隔离的 macOS Chrome 157.0.8103.38 完整 24 项仍通过。将装饰 SVG 从按钮命中测试中排除，使按钮承接触控；保留相同回归以在云端验证。
-- 运行 41802766088 证明命中按钮本体后 Linux 系统 Chrome 仍没有生成 click，因此不能将问题单独归因于 SVG；切换 CI 为 Playwright 配套的锁定 Chromium，同时在完成低层 CDP 拖动后显式关闭该会话，再使用 Playwright 点按，避免跨模拟输入通道残留。保留全部 24 项功能用例，不跳过失败检查。
+用户已通过官方浏览器流程补充 workflow 权限，Pages 已切换为 workflow 来源，地址、HTTPS 与既有公开访问方式保持不变。
 
-## 范围与限制
+待完成：推送收敛后的部署流程，确认云端检查和发布成功，随后验证真实 HTTPS 首页已加载构建脚本、显示游戏，照片与离线重开正常。此处在实际完成后补充结果。
 
-- 没有修改迷宫算法或新增运行时接口／SDK；按钮仅补足触控属性，操作规则保持不变，预缓存边界仍只包含本地构建资源。
-- 保留既有站点地址、HTTPS 和已启用的公开访问方式，不改变仓库可见性。
-- GitHub Pages 不支持自定义每项资源的响应头；继续使用资源哈希、Worker 更新与用户主动激活机制。
-- 手机验收为 Chrome 触屏模拟，不代表已创建或验收微信小程序工程。
+## 边界
+
+未新增运行时接口、SDK 或依赖，离线边界仍只包含本地构建资源。线上手机验证采用浏览器触屏模拟，不等同于微信小程序真机验收。

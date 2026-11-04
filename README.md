@@ -93,7 +93,7 @@ ssh -N -L 4173:127.0.0.1:4173 <你的SSH主机别名>
 
 正式地址：[迷路小森林](https://zhishenwind.github.io/little-maze-adventure/)。Pages 的发布来源使用 **GitHub Actions**，不要直接发布 `main` 的源码目录；浏览器不能直接执行 `/src/main.tsx`。
 
-`.github/workflows/pages.yml` 在 `main` 推送或手动运行时安装锁定依赖，执行完整检查，再发布 `dist-pages/`。任一检查失败都不会部署本次产物。GitHub Pages 的子目录构建与本地根路径构建分开：
+`.github/workflows/pages.yml` 在 `main` 推送或手动运行时安装锁定依赖，执行 `npm run check:pages` 的类型、规格、生产构建、子目录资源与离线检查，再发布 `dist-pages/`。任一部署检查失败都不会部署本次产物。算法和通用游戏交互仍可通过本地完整检查验证。GitHub Pages 的子目录构建与本地根路径构建分开：
 
 ```sh
 npm run build:pages

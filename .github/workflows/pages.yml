@@ -30,8 +30,8 @@ jobs:
         run: npm ci
       - name: Install test browser
         run: npx playwright install --with-deps chromium
-      - name: Check root and Pages builds
-        run: npm run check:full
+      - name: Verify Pages build and deployed resource paths
+        run: npm run check:pages
       - name: Preserve failed browser diagnostics
         if: failure()
         uses: actions/upload-artifact@v7

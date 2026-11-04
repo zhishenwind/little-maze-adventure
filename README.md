@@ -107,4 +107,11 @@ npm run check:full            # 再加桌面与手机浏览器交互验证
 git log --oneline             # 查看迭代提交
 ```
 
-OpenSpec 安装为固定版本的开发依赖；在其他机器上执行 `npm ci` 即可恢复同样的工具版本。当前仅建立本地 Git 历史，尚未配置远程仓库。
+OpenSpec 安装为固定版本的开发依赖；在其他机器上执行 `npm ci` 即可恢复同样的工具版本。远程仓库为 [zhishenwind/little-maze-adventure](https://github.com/zhishenwind/little-maze-adventure)，源码与 OpenSpec 迭代记录一同通过 Git 保存。
+
+```sh
+git clone https://github.com/zhishenwind/little-maze-adventure.git
+cd little-maze-adventure
+npm ci
+npm run dev
+```

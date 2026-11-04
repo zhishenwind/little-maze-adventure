@@ -86,7 +86,7 @@ OpenSpec 初始化为 Codex 生成了 propose、apply、update、sync、archive�
 - `main` 保存项目当前基线；单个逻辑迭代优先对应一个清晰的提交或功能分支。
 - 提交消息示例：`feat: add ocean collectibles`、`fix: preserve drag position after touch release`。
 - 提交相关源码、锁文件、现行规格、归档、验证记录及变更摘要。
-- 本项目当前仅建立本地仓库，远程备份需要后续指定 Git 托管地址。首次克隆使用 `npm ci` 安装锁定依赖。
+- `origin` 指向 [zhishenwind/little-maze-adventure](https://github.com/zhishenwind/little-maze-adventure)。首次克隆使用 `npm ci` 安装锁定依赖；推送须得到用户授权，按仓库权限配置本机 GitHub 认证，不将凭据写进源码或远程 URL。
 - 极小的无行为维护允许直接提交，避免为一个错别字创建完整工件；行为变更和缺陷修复仍走 OpenSpec。
 
 ## 验证记录建议

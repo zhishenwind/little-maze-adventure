@@ -25,16 +25,13 @@ import {
   X,
 } from "lucide-react";
 import OfflineNotice from "./OfflineNotice";
-import { Animal, Scenery, Treat } from "./Artwork";
+import { Animal, Treat } from "./Artwork";
 import type { Character, Theme } from "./Artwork";
 import { generateMaze, neighbor, solve } from "./game/maze";
-import type { Maze } from "./game/maze";
+import type { Difficulty, Maze } from "./game/maze";
+import { fitMaze, LEVELS } from "./game/difficulty";
 
-const difficulties = [
-  { size: 4, name: "小小探索", detail: "4 × 4", label: "简单", icon: Sprout },
-  { size: 6, name: "勇敢出发", detail: "6 × 6", label: "中等", icon: Trees },
-  { size: 8, name: "迷宫高手", detail: "8 × 8", label: "挑战", icon: Rocket },
-];
+const difficultyIcons = [Sprout, Trees, Rocket];
 const themes: { id: Theme; name: string; icon: typeof Leaf; note: string }[] = [
   { id: "forest", name: "奇妙森林", icon: Trees, note: "在绿意里，发现小惊喜" },
   {
@@ -68,13 +65,25 @@ type Game = {
   steps: number;
   phase: "ready" | "playing" | "won";
 };
-const freshGame = (size: number): Game => ({
-  maze: generateMaze(size),
+const freshGame = (level: Difficulty, cols: number, rows: number): Game => ({
+  maze: generateMaze(cols, rows, level),
   position: 0,
   trail: [0],
   steps: 0,
   phase: "ready",
 });
+function initialArea() {
+  const mobile = window.matchMedia("(max-width: 900px)").matches;
+  return mobile
+    ? {
+        width: window.innerWidth - 32,
+        height: Math.max(224, window.innerHeight - 360),
+      }
+    : {
+        width: 520,
+        height: Math.max(336, Math.min(520, window.innerHeight - 360)),
+      };
+}
 function readSaved(key: string, fallback: number) {
   try {
     const value = Number(localStorage.getItem(key));
@@ -86,43 +95,43 @@ function readSaved(key: string, fallback: number) {
 
 function MazeBoard({
   game,
-  theme,
   character,
   hint,
   onPointerStart,
   svgRef,
 }: {
   game: Game;
-  theme: Theme;
   character: Character;
   hint: number[];
   onPointerStart: (event: React.PointerEvent<SVGSVGElement>) => void;
   svgRef: React.RefObject<SVGSVGElement | null>;
 }) {
   const { maze, position, trail } = game;
-  const unit = 520 / maze.size;
+  const unit = 52,
+    width = maze.cols * unit,
+    height = maze.rows * unit;
   const center = (cell: number) => [
-    100 + ((cell % maze.size) + 0.5) * unit,
-    55 + (Math.floor(cell / maze.size) + 0.5) * unit,
+    8 + ((cell % maze.cols) + 0.5) * unit,
+    26 + (Math.floor(cell / maze.cols) + 0.5) * unit,
   ];
   const points = (cells: number[]) =>
     cells.map((cell) => center(cell).join(",")).join(" ");
   const lines: [number, number, number, number][] = [];
-  for (let cell = 0; cell < maze.size * maze.size; cell++) {
-    const x = 100 + (cell % maze.size) * unit,
-      y = 55 + Math.floor(cell / maze.size) * unit;
+  for (let cell = 0; cell < maze.cols * maze.rows; cell++) {
+    const x = 8 + (cell % maze.cols) * unit,
+      y = 26 + Math.floor(cell / maze.cols) * unit;
     if (maze.walls[cell] & 1) lines.push([x, y, x + unit, y]);
     if (maze.walls[cell] & 8) lines.push([x, y, x, y + unit]);
-    if (Math.floor(cell / maze.size) === maze.size - 1 && maze.walls[cell] & 4)
+    if (Math.floor(cell / maze.cols) === maze.rows - 1 && maze.walls[cell] & 4)
       lines.push([x, y + unit, x + unit, y + unit]);
-    if (cell % maze.size === maze.size - 1 && maze.walls[cell] & 2)
+    if (cell % maze.cols === maze.cols - 1 && maze.walls[cell] & 2)
       lines.push([x + unit, y, x + unit, y + unit]);
   }
   const path = lines
     .map(([x1, y1, x2, y2]) => `M${x1} ${y1}L${x2} ${y2}`)
     .join("");
   const [px, py] = center(position),
-    [gx, gy] = center(maze.size ** 2 - 1);
+    [gx, gy] = center(maze.cols * maze.rows - 1);
   const animalSize = Math.min(77, unit * 0.78);
   return (
     <svg
@@ -130,10 +139,14 @@ function MazeBoard({
       className="maze-svg"
       data-testid="maze"
       data-position={position}
-      data-size={maze.size}
-      viewBox="0 0 720 640"
+      data-cols={maze.cols}
+      data-rows={maze.rows}
+      viewBox={`0 0 ${width + 16} ${height + 52}`}
+      style={{
+        width: `min(100%, calc(var(--board-height) * ${(width + 16) / (height + 52)}))`,
+      }}
       role="group"
-      aria-label={`${maze.size}乘${maze.size}迷宫，使用方向键或拖动小动物前进`}
+      aria-label={`${maze.cols}列${maze.rows}行迷宫，使用方向键或拖动小动物前进`}
       onPointerDown={onPointerStart}
     >
       <defs>
@@ -149,28 +162,27 @@ function MazeBoard({
           <feDropShadow dx="0" dy="3" stdDeviation="1" floodOpacity=".12" />
         </filter>
       </defs>
-      <Scenery theme={theme} />
       <rect
-        x="92"
-        y="50"
-        width="536"
-        height="533"
+        x="3"
+        y="21"
+        width={width + 10}
+        height={height + 10}
         rx="15"
         className="maze-foundation"
       />
       <rect
-        x="100"
-        y="55"
-        width="520"
-        height="520"
+        x="8"
+        y="26"
+        width={width}
+        height={height}
         rx="8"
         className="maze-floor"
       />
       <rect
-        x="100"
-        y="55"
-        width="520"
-        height="520"
+        x="8"
+        y="26"
+        width={width}
+        height={height}
         rx="8"
         fill="url(#floor-dots)"
       />
@@ -210,7 +222,7 @@ function MazeBoard({
         strokeLinecap="round"
         filter="url(#hedge-shadow)"
       />
-      <path d={path} className="hedge" strokeWidth="8" strokeLinecap="round" />
+      <path d={path} className="hedge" strokeWidth="4" strokeLinecap="round" />
       <g
         transform={`translate(${gx - animalSize / 2}, ${gy - animalSize / 2})`}
       >
@@ -235,21 +247,26 @@ function MazeBoard({
           <Animal kind={character} />
         </svg>
       </g>
-      <text x={center(0)[0]} y="35" textAnchor="middle" className="map-label">
+      <text x={center(0)[0]} y="16" textAnchor="middle" className="map-label">
         从这里出发
       </text>
-      <text x={gx} y="603" textAnchor="middle" className="map-label">
-        美味在等你！
+      <text x={gx} y={height + 46} textAnchor="middle" className="map-label">
+        宝藏在等你！
       </text>
     </svg>
   );
 }
 
 export default function App() {
-  const [size, setSize] = useState(4);
+  const [level, setLevel] = useState<Difficulty>("easy");
+  const [focused, setFocused] = useState(false);
   const [theme, setTheme] = useState<Theme>("forest");
   const [character, setCharacter] = useState<Character>("bunny");
-  const [game, setGame] = useState<Game>(() => freshGame(4));
+  const [game, setGame] = useState<Game>(() => {
+    const area = initialArea();
+    const { cols, rows } = fitMaze("easy", area.width, area.height);
+    return freshGame("easy", cols, rows);
+  });
   const gameRef = useRef(game);
   const [hint, setHint] = useState<number[]>([]);
   const hintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -273,7 +290,7 @@ export default function App() {
   const drag = useRef<{ id: number; x: number; y: number } | null>(null);
   const critter = characters.find((c) => c.id === character)!;
   const landscape = themes.find((t) => t.id === theme)!;
-  const difficulty = difficulties.find((d) => d.size === size)!;
+  const difficulty = LEVELS.find((d) => d.id === level) ?? { label: "练习" };
 
   function commit(next: Game) {
     gameRef.current = next;
@@ -314,7 +331,7 @@ export default function App() {
         previous === -1
           ? [...current.trail, position]
           : current.trail.slice(0, previous + 1);
-      const won = position === current.maze.size ** 2 - 1;
+      const won = position === current.maze.cols * current.maze.rows - 1;
       commit({
         ...current,
         position,
@@ -322,6 +339,8 @@ export default function App() {
         steps: current.steps + 1,
         phase: won ? "won" : "playing",
       });
+      // Direction input can start an adventure directly; dragging waits until release to reflow.
+      if (!drag.current || won) setFocused(true);
       setHint([]);
       if (won) {
         drag.current = null;
@@ -339,6 +358,20 @@ export default function App() {
     },
     [tone],
   );
+
+  useEffect(() => {
+    // A gesture uses coordinates from one layout; resume from the current cell after rotation.
+    const stopDrag = () => {
+      drag.current = null;
+    };
+    window.addEventListener("resize", stopDrag);
+    return () => window.removeEventListener("resize", stopDrag);
+  }, []);
+
+  useEffect(() => {
+    if (focused && window.matchMedia("(max-width: 900px)").matches)
+      boardRef.current?.scrollIntoView({ block: "start" });
+  }, [focused]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -399,9 +432,14 @@ export default function App() {
     if (noticeTimer.current) clearTimeout(noticeTimer.current);
     noticeTimer.current = setTimeout(() => setNotice(""), 2600);
   }
-  function newGame(nextSize = size, start = false) {
+  function newGame(nextLevel = level, start = false) {
     drag.current = null;
-    const next = freshGame(nextSize);
+    const area = initialArea();
+    const width = boardRef.current
+      ? boardRef.current.clientWidth - 18
+      : area.width;
+    const { cols, rows } = fitMaze(nextLevel, width, area.height);
+    const next = freshGame(nextLevel, cols, rows);
     if (start) next.phase = "playing";
     commit(next);
     setHint([]);
@@ -410,10 +448,16 @@ export default function App() {
   }
   function start() {
     if (game.phase === "ready") commit({ ...game, phase: "playing" });
-    else newGame(size, true);
-    boardRef.current?.focus({ preventScroll: true });
-    if (window.matchMedia("(max-width: 760px)").matches)
-      boardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    else newGame(level, true);
+    enterBoard();
+  }
+  function enterBoard() {
+    setFocused(true);
+    requestAnimationFrame(() => {
+      boardRef.current?.focus({ preventScroll: true });
+      if (window.matchMedia("(max-width: 900px)").matches)
+        boardRef.current?.scrollIntoView({ block: "start" });
+    });
   }
   function showHint() {
     if (game.phase === "won") {
@@ -443,11 +487,12 @@ export default function App() {
     const p = point(event);
     if (!p) return;
     const current = gameRef.current,
-      unit = 520 / current.maze.size;
-    const cx = 100 + ((current.position % current.maze.size) + 0.5) * unit;
+      unit = 52;
+    const cx = 8 + ((current.position % current.maze.cols) + 0.5) * unit;
     const cy =
-      55 + (Math.floor(current.position / current.maze.size) + 0.5) * unit;
-    if (Math.hypot(p.x - cx, p.y - cy) > unit * 0.62) {
+      26 + (Math.floor(current.position / current.maze.cols) + 0.5) * unit;
+    const scale = svgRef.current!.getScreenCTM()!.a;
+    if (Math.hypot(p.x - cx, p.y - cy) > Math.max(unit * 0.55, 22 / scale)) {
       flash("先按住小动物，再带它一起走吧！");
       return;
     }
@@ -461,7 +506,7 @@ export default function App() {
     if (!previous || previous.id !== event.pointerId) return;
     const p = point(event);
     if (!p) return;
-    const unit = 520 / gameRef.current.maze.size;
+    const unit = 52;
     const distance = Math.hypot(p.x - previous.x, p.y - previous.y);
     const samples = Math.min(
       150,
@@ -472,16 +517,24 @@ export default function App() {
       if (gameRef.current.phase === "won") break;
       const x = previous.x + ((p.x - previous.x) * i) / samples;
       const y = previous.y + ((p.y - previous.y) * i) / samples;
-      if (x < 100 || x >= 620 || y < 55 || y >= 575) continue;
-      const col = Math.floor((x - 100) / unit),
-        row = Math.floor((y - 55) / unit);
+      if (
+        x < 8 || x >= 8 + gameRef.current.maze.cols * unit ||
+        y < 26 || y >= 26 + gameRef.current.maze.rows * unit
+      ) continue;
+      const col = Math.floor((x - 8) / unit),
+        row = Math.floor((y - 26) / unit);
       const current = gameRef.current.position;
-      const dr = row - Math.floor(current / gameRef.current.maze.size),
-        dc = col - (current % gameRef.current.maze.size);
+      const dr = row - Math.floor(current / gameRef.current.maze.cols),
+        dc = col - (current % gameRef.current.maze.cols);
       if (Math.abs(dr) + Math.abs(dc) === 1)
         move(dr === -1 ? 0 : dc === 1 ? 1 : dr === 1 ? 2 : 3);
     }
     if (drag.current) drag.current = { id: event.pointerId, x: p.x, y: p.y };
+  }
+  function finishDrag() {
+    const wasDragging = drag.current !== null;
+    drag.current = null;
+    if (wasDragging && gameRef.current.phase !== "ready") setFocused(true);
   }
   function toggleSound() {
     const next = !sound;
@@ -505,12 +558,12 @@ export default function App() {
     }
   }
   const cellPosition = {
-    row: Math.floor(game.position / size) + 1,
-    col: (game.position % size) + 1,
+    row: Math.floor(game.position / game.maze.cols) + 1,
+    col: (game.position % game.maze.cols) + 1,
   };
 
   return (
-    <div className={`app theme-${theme}`}>
+    <div className={`app theme-${theme} ${focused ? "game-focused" : ""}`}>
       <header className="site-header">
         <div className="header-inner">
           <a className="brand" href="#" aria-label="迷路小森林首页">
@@ -586,33 +639,48 @@ export default function App() {
                 <span className="subtle">慢慢来，也很棒</span>
               </div>
               <div className="difficulty-list">
-                {difficulties.map((d) => (
-                  <button
-                    key={d.size}
-                    className={`difficulty-option ${size === d.size ? "selected" : ""}`}
-                    aria-pressed={size === d.size}
-                    onClick={() => {
-                      if (size !== d.size) {
-                        setSize(d.size);
-                        newGame(d.size);
-                      }
-                    }}
-                  >
-                    <span className="difficulty-icon">
-                      <d.icon size={23} strokeWidth={1.7} />
-                    </span>
-                    <span className="difficulty-name">
-                      {d.name}
-                      <small>{d.detail} 格迷宫</small>
-                    </span>
-                    <span className="level-tag">{d.label}</span>
-                    <span className="radio-mark">
-                      {size === d.size && <Check size={11} strokeWidth={3} />}
-                    </span>
-                  </button>
-                ))}
+                {LEVELS.map((d, index) => {
+                  const Icon = difficultyIcons[index];
+                  return (
+                    <button
+                      key={d.id}
+                      className={`difficulty-option ${level === d.id ? "selected" : ""}`}
+                      aria-pressed={level === d.id}
+                      onClick={() => {
+                        if (level !== d.id) {
+                          setLevel(d.id);
+                          newGame(d.id);
+                        }
+                      }}
+                    >
+                      <span className="difficulty-icon">
+                        <Icon size={23} strokeWidth={1.7} />
+                      </span>
+                      <span className="difficulty-name">
+                        {d.name}<small>{d.note}</small>
+                      </span>
+                      <span className="level-tag">{d.label}</span>
+                      <span className="radio-mark">
+                        {level === d.id && <Check size={11} strokeWidth={3} />}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </section>
+            <p className="grid-summary" data-testid="grid-summary">
+              本局 {game.maze.cols} × {game.maze.rows} · 列 × 行 · 已适配屏幕
+            </p>
+            <button
+              className="practice-button"
+              aria-pressed={level === "practice"}
+              onClick={() => {
+                setLevel("practice");
+                newGame("practice");
+              }}
+            >
+              先练习拖动（4×4，可跳过）
+            </button>
             <section className="setting-section">
               <div className="section-label">
                 <span className="section-number">02</span>
@@ -668,6 +736,11 @@ export default function App() {
                 ))}
               </div>
             </section>
+            {game.phase !== "ready" && game.phase !== "won" && (
+              <button className="start-button continue-button" onClick={enterBoard}>
+                继续当前冒险 <ArrowRight size={20} />
+              </button>
+            )}
             <button className="start-button" onClick={start}>
               <span>
                 {game.phase === "ready"
@@ -689,9 +762,7 @@ export default function App() {
             tabIndex={-1}
             aria-label="迷宫游戏区"
             onPointerMove={pointerMove}
-            onPointerUp={() => {
-              drag.current = null;
-            }}
+            onPointerUp={finishDrag}
             onPointerCancel={() => {
               drag.current = null;
             }}
@@ -709,10 +780,24 @@ export default function App() {
                     {landscape.name}
                     <span className="game-difficulty">{difficulty.label}</span>
                   </h2>
-                  <p>{landscape.note}</p>
+                  <p>
+                    {game.maze.cols} × {game.maze.rows} · 列 × 行 · {level === "practice" ? "练习拖动" : "慢慢找，不着急"}
+                  </p>
                 </div>
               </div>
               <div className="game-tools">
+                <button
+                  className="back-settings"
+                  onClick={() => {
+                    drag.current = null;
+                    setFocused(false);
+                    requestAnimationFrame(() =>
+                      document.querySelector(".settings-card")?.scrollIntoView({ block: "start" }),
+                    );
+                  }}
+                >
+                  返回设置
+                </button>
                 <button
                   className="icon-button"
                   aria-label="重新开始当前迷宫"
@@ -755,7 +840,6 @@ export default function App() {
               </div>
               <MazeBoard
                 game={game}
-                theme={theme}
                 character={character}
                 hint={hint}
                 onPointerStart={pointerStart}
@@ -954,7 +1038,7 @@ export default function App() {
           className="start-button"
           autoFocus
           onClick={() => {
-            newGame(size, true);
+            newGame(level, true);
             boardRef.current?.focus({ preventScroll: true });
           }}
         >
@@ -964,6 +1048,7 @@ export default function App() {
           className="secondary-button"
           onClick={() => {
             setShowWin(false);
+            setFocused(false);
             document
               .querySelector(".settings-card")
               ?.scrollIntoView({ behavior: "smooth", block: "start" });

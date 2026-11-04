@@ -81,13 +81,13 @@ test("first visit saves every asset; later visits use cache and a fresh offline 
       throw new Error("Avatar did not decode");
   }, photo);
   for (const [name, size] of [
-    ["勇敢出发", "6"],
-    ["迷宫高手", "8"],
-    ["小小探索", "4"],
+    ["勇敢探索", "8"],
+    ["迷宫高手", "10"],
+    ["轻松出发", "6"],
   ]) {
     await reopened.getByRole("button", { name: new RegExp(name) }).click();
     await expect(reopened.getByTestId("maze")).toHaveAttribute(
-      "data-size",
+      "data-cols",
       size,
     );
   }

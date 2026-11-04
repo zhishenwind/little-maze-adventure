@@ -8,8 +8,8 @@ test("settings, hints, restart, themes and animal rewards work", async ({
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/");
   await expect(page).toHaveTitle(/迷路小森林/);
-  await page.getByRole("button", { name: /勇敢出发/ }).click();
-  await expect(page.getByTestId("maze")).toHaveAttribute("data-size", "6");
+  await page.getByRole("button", { name: /勇敢探索/ }).click();
+  await expect(page.getByTestId("maze")).toHaveAttribute("data-cols", "8");
   await page.getByRole("button", { name: "蓝色海洋" }).click();
   await page.getByRole("button", { name: "小猫布丁", exact: true }).click();
   await expect(page.locator(".mission")).toContainText("毛线球");
@@ -20,7 +20,7 @@ test("settings, hints, restart, themes and animal rewards work", async ({
   await page.getByRole("button", { name: "小牛伊一", exact: true }).click();
   await expect(page.locator(".mission")).toContainText("蝴蝶");
   await page.getByRole("button", { name: /迷宫高手/ }).click();
-  await expect(page.getByTestId("maze")).toHaveAttribute("data-size", "8");
+  await expect(page.getByTestId("maze")).toHaveAttribute("data-cols", "10");
   await page.getByRole("button", { name: "开始冒险", exact: true }).click();
   await page.getByRole("button", { name: "给我一点提示" }).click();
   await expect(page.locator(".hint-line")).toBeAttached();
@@ -188,6 +188,7 @@ test("Yiyi uses the same photo in settings, mission, maze and victory", async ({
     image.src = url!;
     await image.decode();
   }, avatar);
+  await page.getByTestId("player").scrollIntoViewIfNeeded();
   const { size, route } = await readBoard(page);
   const start = await center(page, 0, size);
   const next = await center(page, route[0].cell, size);
@@ -219,4 +220,102 @@ test("Yiyi uses the same photo in settings, mission, maze and victory", async ({
     );
   });
   await page.screenshot({ path: "test-results/yiyi-win.png", fullPage: true });
+});
+
+for (const viewport of [
+  { width: 320, height: 568 }, { width: 375, height: 812 },
+  { width: 390, height: 844 }, { width: 430, height: 932 },
+]) {
+  test(`adaptive grid fits ${viewport.width}×${viewport.height} and keeps distinct levels`, async ({ browser }) => {
+    const context = await browser.newContext({ viewport, isMobile: true, hasTouch: true });
+    try {
+      const page = await context.newPage();
+      await page.goto("http://127.0.0.1:5173/");
+      for (const [name, maxCols, maxRows, cellTarget] of [
+        ["轻松出发", 6, 8, 56], ["勇敢探索", 8, 10, 44], ["迷宫高手", 10, 12, 35],
+      ] as const) {
+        await page.getByRole("button", { name: new RegExp(name) }).tap();
+        const board = page.getByTestId("maze");
+        const cols = Number(await board.getAttribute("data-cols"));
+        const rows = Number(await board.getAttribute("data-rows"));
+        expect(cols).toBeLessThanOrEqual(maxCols);
+        expect(rows).toBeLessThanOrEqual(maxRows);
+        await expect(page.getByTestId("grid-summary")).toContainText(`${cols} × ${rows}`);
+        await page.getByRole("button", { name: "开始冒险", exact: true }).tap();
+        await expect(page.getByRole("complementary", { name: "冒险设置" })).toBeHidden();
+        const cell = await board.evaluate((element) => 52 * (element as unknown as SVGSVGElement).getScreenCTM()!.a);
+        expect(cell).toBeGreaterThanOrEqual(cellTarget - 1);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(viewport.width);
+        const buttons = await page.locator('.touch-controls button').evaluateAll((elements) =>
+          elements.map((e) => ({ width: e.getBoundingClientRect().width, height: e.getBoundingClientRect().height })));
+        expect(buttons.every((b) => b.width >= 44 && b.height >= 44)).toBe(true);
+        if (viewport.width === 390) {
+          expect(cols).toBe(maxCols); expect(rows).toBe(maxRows);
+          await page.screenshot({ path: `test-results/phone-${maxCols}x${maxRows}.png`, fullPage: true });
+        }
+        await page.getByRole("button", { name: "返回设置", exact: true }).tap();
+      }
+      await page.getByRole("button", { name: /先练习拖动/ }).tap();
+      await expect(page.getByTestId("maze")).toHaveAttribute("data-cols", "4");
+      await expect(page.getByTestId("maze")).toHaveAttribute("data-rows", "4");
+      await page.getByRole("button", { name: /轻松出发/ }).tap();
+      await expect(page.getByRole("button", { name: /轻松出发/ })).toHaveAttribute("aria-pressed", "true");
+    } finally { await context.close(); }
+  });
+}
+
+test("rotation and returning to settings preserve a rectangular adventure", async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  try {
+    const page = await context.newPage();
+    await page.goto("http://127.0.0.1:5173/");
+    await page.getByRole("button", { name: /勇敢探索/ }).tap();
+    await page.getByRole("button", { name: "开始冒险", exact: true }).tap();
+    const { size, rows, route } = await readBoard(page);
+    const path = await page.locator(".hedge").getAttribute("d");
+    await page.getByRole("button", { name: labels[route[0].direction], exact: true }).tap();
+    await page.getByRole("button", { name: "返回设置", exact: true }).tap();
+    await page.getByRole("button", { name: "蓝色海洋", exact: true }).tap();
+    await page.getByRole("button", { name: "继续当前冒险", exact: true }).tap();
+    await page.setViewportSize({ width: 844, height: 390 });
+    await expect(page.getByTestId("maze")).toHaveAttribute("data-cols", String(size));
+    await expect(page.getByTestId("maze")).toHaveAttribute("data-rows", String(rows));
+    await expect(page.locator(".hedge")).toHaveAttribute("d", path!);
+    await expect(page.getByTestId("maze")).toHaveAttribute("data-position", String(route[0].cell));
+    await expect(page.locator(".movement-status")).toContainText("1");
+    await page.setViewportSize({ width: 390, height: 844 });
+    const cdp = await context.newCDPSession(page);
+    // Grab just outside the visible avatar: the logical target stays at least 44px wide.
+    const from = await center(page, route[0].cell, size);
+    const to = await center(page, route[1].cell, size);
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: from.x + 20, y: from.y, id: 1 }] });
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ ...to, id: 1 }] });
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    await expect(page.getByTestId("maze")).toHaveAttribute("data-position", String(route[1].cell));
+    for (const edge of route.slice(2)) await page.getByRole("button", { name: labels[edge.direction], exact: true }).tap();
+    await expect(page.getByRole("dialog")).toContainText("找到胡萝卜啦");
+  } finally { await context.close(); }
+});
+
+test("direct mobile drag enters focused play after release without losing the gesture", async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  try {
+    const page = await context.newPage();
+    await page.goto("http://127.0.0.1:5173/");
+    await page.getByTestId("maze").scrollIntoViewIfNeeded();
+    const { size, route } = await readBoard(page);
+    const path = await page.locator(".hedge").getAttribute("d");
+    const from = await center(page, 0, size), to = await center(page, route[0].cell, size);
+    const cdp = await context.newCDPSession(page);
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ ...from, id: 1 }] });
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ ...to, id: 1 }] });
+    await expect(page.locator(".app")).not.toHaveClass(/game-focused/);
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    await expect(page.locator(".app")).toHaveClass(/game-focused/);
+    await expect(page.getByTestId("maze")).toHaveAttribute("data-position", String(route[0].cell));
+    await expect(page.locator(".hedge")).toHaveAttribute("d", path!);
+    await page.getByRole("button", { name: "重新开始当前迷宫" }).tap();
+    await expect(page.getByTestId("maze")).toHaveAttribute("data-position", "0");
+    await expect(page.locator(".hedge")).toHaveAttribute("d", path!);
+  } finally { await context.close(); }
 });
